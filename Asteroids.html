@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Asteroids 3D</title>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0px;
+      border: 0;
+      overflow: hidden; /*  Disable scrollbars */
+      display: block;  /* No floating content on sides */
+    }
+  </style>
+</head>
+<script id="vertex-shader" type="x-shader/x-vertex">
+
+attribute vec4 vPosition;
+attribute vec2 vTexCoord;
+varying vec2 fTexCoord;
+varying vec3 pos;
+
+varying vec3 N, L, E;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 playerPosMatrix;
+uniform vec3 playerPos;
+uniform vec4 lightPosition;
+void main()
+{
+  pos = (modelViewMatrix * vPosition).xyz;
+    
+  if(lightPosition.w == 0.0)
+    L = normalize(lightPosition.xyz);
+  else L = normalize( lightPosition.xyz - pos );
+  fTexCoord = vTexCoord;
+  
+  //Still in the same system.
+  E = normalize(playerPos-pos);
+
+  gl_Position = projectionMatrix * playerPosMatrix *  modelViewMatrix * vPosition;
+  // check for directional light
+
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+precision mediump float;
+
+uniform vec4 ambientProduct;
+uniform vec4 diffuseProduct;
+uniform vec4 specularProduct; // no need, got specular map!
+uniform float shininess;
+uniform mat4 normalMatrix;
+varying vec3 N, L, E;
+varying vec2 fTexCoord;
+varying vec3 pos;
+
+uniform sampler2D texture;
+uniform sampler2D normals;
+uniform sampler2D specular;
+void main()
+{
+  if(pos.x > 10.0 || pos.x < -10.0 || pos.y > 10.0 || pos.y < -10.0 || pos.z > 10.0 || pos.z < -10.0) discard;
+  vec4 fColor;
+  //Her er vandinn. Normal maps eru stundum með flipped channels... blár á að vera í stefnu z, rauður í stefnu x og grænn upp...
+  //Væri best að spara þessa vinnslu með því að breyta í file...
+  mat4 flipGB = mat4(1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+  vec4 nColor = (2.0*(texture2D(normals, fTexCoord).rgba)-1.0);
+  vec3 normal = normalize((normalMatrix * (flipGB * nColor )).xyz);
+  vec3 R = 2.0*dot(L, normal) * normal - L;
+  vec3 H = normalize( L + E );
+  vec4 ambient = ambientProduct;
+  float Kd = max( dot(L, normal), 0.0 );
+  vec4  diffuse = Kd*diffuseProduct;
+  float Ks = pow( max(dot(E, R), 0.0), shininess );
+
+  vec4  specular = Ks * texture2D(specular, fTexCoord);
+
+  if( dot(L, normal) <= 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
+
+  fColor = ambient + diffuse + specular;
+
+  fColor.a = 1.0;
+  specular.a = 0.0;
+
+  //gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); 
+  gl_FragColor = texture2D( texture, fTexCoord ) *  fColor; // + specular;
+}
+</script>
+
+<script id = "vertex-shader2" type="x-shader/x-vertex">
+attribute vec4 vPosition; 
+//attribute vec4 vColor;
+varying vec4 fColor;
+uniform mat4 rotation;
+uniform mat4 projectionMatrix;
+uniform mat4 playerPosMatrix;
+varying vec3 fPosition;
+
+void main()
+{
+ // fColor = vColor;
+  //gl_Position = rotation * vPosition;
+  fPosition = vPosition.xyz;
+  gl_Position =  projectionMatrix * playerPosMatrix * vPosition;
+  
+}
+
+</script>
+
+<script id = "fragment-shader2" type="x-shader/x-fragment">
+precision mediump float;
+//uniform sampler2D texture;
+uniform samplerCube skybox;
+varying vec4 fColor;
+varying vec3 fPosition;
+void main()
+{
+  gl_FragColor = textureCube(skybox, fPosition) * 2.0;
+}
+</script>
+
+
+
+
+<div> fps: <span id="fps"></span>, Asteroids: <span id="numAst"></span>, shots: <span id ="numShots"></span>, Points: <span id = "points"></span></div>
+<script type="text/javascript">
+  function resize_canvas(){
+      canvas = document.getElementById("gl-canvas");
+      if (canvas.width  != window.innerWidth)
+      {
+          canvas.width  = window.innerWidth;
+          canvas.height = canvas.width*9/16
+      }
+
+      else if (canvas.height != window.innerHeight)
+      {
+          canvas.height = window.innerHeight;
+          canvas.width = canvas.height*16/9
+      }
+      
+  }
+</script>
+<script type="text/javascript" src="./ext/jquery-3.1.1.min.js"></script>
+<script type="text/javascript" src="./ext/webgl-utils.js"></script>
+<script type="text/javascript" src="./ext/initShaders.js"></script>
+<script type="text/javascript" src="./ext/MV.js"></script>
+<script type="text/javascript" src="./src/OBJLoader.js"></script>
+<script type="text/javascript" src="./src/Utility.js"></script>
+<script type="text/javascript" src="./src/Skybox.js"></script>
+<script type="text/javascript" src="./src/Asteroid.js"></script>
+<script type="text/javascript" src="./src/Shot.js"></script>
+<script type="text/javascript" src="./src/Asteroids.js"></script>
+<body onresize="resize_canvas()">
+ <canvas id="gl-canvas">
+        Oops ... your browser doesn't support the HTML5 canvas element</canvas>
+      <img id = "texture"  src = "./textures/Obelix_1TM.png" hidden></img>
+      <img id = "normals"  src = "./textures/Obelix_1NM.png" hidden></img>
+      <img id = "specular" src = "./textures/Obelix_1SM.png" hidden></img>
+</body>
+</html>
