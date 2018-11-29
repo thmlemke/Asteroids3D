@@ -1,4 +1,5 @@
 function loadMeshData(data) {
+  console.log(data)
   var lines = data.split("\n");
   var v = [];
   var vt = [];
