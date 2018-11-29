@@ -30,7 +30,7 @@ function Asteroid( at, velocity, axis, theta, thetaD, scale, size) {
 };
 
 Asteroid.init = function(program) {
-  var modelData = importObj('../assets/Obelix_1.OBJ');
+  var modelData = importObj('./assets/Obelix_1.OBJ');
   Asteroid.vLength = modelData.vertices.length/4;
   Asteroid.vBuffer = createBuffer(modelData.vertices);
   Asteroid.tBuffer = createBuffer(modelData.uv);

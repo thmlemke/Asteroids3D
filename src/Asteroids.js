@@ -332,7 +332,7 @@ function initGameState() {
 }
 
 function detectCollisions(){
-  for (var i=Asteroid.asteroids.length-1; i>=0; i--){ //can technically miss some, but happens 60times per sec...
+  for (var i=Asteroid.asteroids.length-1; i>=0; i--){ 
     if (length(subtract(Asteroid.asteroids[i].at, eye))< Asteroid.asteroids[i].scale/2) {
       console.log("COLLISION");
       initGameState();
@@ -342,7 +342,6 @@ function detectCollisions(){
       else if(length(subtract(Asteroid.asteroids[i].at,  Shot.shots[j].at)) < 1.0){
         Asteroid.remove(i, j);
         Shot.remove(j);
-        // splitAsteroid[i]; checks size and 
       }      
     }
   }
